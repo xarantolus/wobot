@@ -5,9 +5,10 @@ use std::sync::RwLock;
 use std::time::Duration;
 
 use anyhow::Context as _;
+
 use poise::builtins::{register_globally, register_in_guild};
 use poise::serenity_prelude::{
-    ChannelId, ClientBuilder, Colour, GatewayIntents, GuildId, ReactionType, UserId,
+    ChannelId, ClientBuilder, Colour, GatewayIntents, GuildId, ReactionType, RoleId, UserId,
 };
 use poise::{Framework, PrefixFrameworkOptions};
 use serde::Deserialize;
@@ -19,6 +20,7 @@ use tracing::info;
 use crate::check_reminder::check_reminders;
 use crate::commands::*;
 use crate::hashable_regex::HashableRegex;
+use crate::role_removal::check_role_removals;
 
 mod check_reminder;
 mod commands;
@@ -26,6 +28,7 @@ mod constants;
 mod easy_embed;
 mod handler;
 mod hashable_regex;
+mod role_removal;
 
 #[derive(Debug, Deserialize)]
 struct AutoReply {
@@ -40,12 +43,21 @@ struct AutoReply {
     colour: Colour,
 }
 
+#[derive(Debug, Deserialize)]
+struct RoleRemoval {
+    guild_id: GuildId,
+    channel_id: ChannelId,
+    role_id: RoleId,
+    timeout_days: u64,
+}
+
 #[derive(Deserialize)]
 struct Config {
     event_channel_per_guild: HashMap<GuildId, ChannelId>,
     excluded_channels: HashSet<ChannelId>,
     auto_reactions: HashMap<HashableRegex, ReactionType>,
     auto_replies: Vec<AutoReply>,
+    role_removals: Vec<RoleRemoval>,
 }
 
 /// User data, which is stored and accessible in all command invocations
@@ -133,6 +145,11 @@ async fn poise(
                 info!("Loaded reaction messages");
                 check_reminders(ctx.clone(), pool.clone(), Duration::from_secs(60));
                 info!("Started reminder thread");
+                check_role_removals(
+                    ctx.clone(),
+                    config.role_removals,
+                    Duration::from_secs(24 * 60 * 60),
+                );
                 Ok(Data {
                     cat_api_token: secret_store.get("CAT_API_TOKEN").unwrap_or("".to_string()),
                     dog_api_token: secret_store.get("DOG_API_TOKEN").unwrap_or("".to_string()),

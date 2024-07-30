@@ -110,6 +110,15 @@ WoBot can react with both Unicode and custom Discord emojis, even animated ones.
     // guild_id: channel_id
     0: 0
   }
+  role_removals: [
+    {
+      // If someone in guild has not written in channel in timeout_days days, the role gets removed
+      guild_id: 1,
+      channel_id: 2,
+      role_id: 3,
+      timeout_days: 30
+    }
+  ]
   auto_reactions: {
     robot: {
       name: "🤖"

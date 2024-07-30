@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use poise::serenity_prelude::CreateEmbed;
 use poise::{command, CreateReply};
-use rand::{thread_rng, Rng};
+
 use serde::Deserialize;
 
 use crate::constants::HTTP_CLIENT;
